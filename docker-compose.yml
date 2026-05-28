@@ -1,0 +1,9 @@
+services:
+  axis-server:
+    build: ./server
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - FLUSH_MS=80
+    restart: unless-stopped

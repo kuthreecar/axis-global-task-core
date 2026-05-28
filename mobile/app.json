@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Axis",
+    "slug": "axis-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "axis",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "to.axis.app" },
+    "android": { "package": "to.axis.app" },
+    "web": { "bundler": "metro", "output": "single" },
+    "extra": {
+      "wsUrl": "ws://localhost:8080/ws"
+    },
+    "plugins": []
+  }
+}
