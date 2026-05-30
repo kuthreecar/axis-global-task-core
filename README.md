@@ -14,11 +14,9 @@ Includes:
 
 ## Live URLs
 
-- **Backend WS (Railway):** `wss://<your-railway-app>.up.railway.app/ws`
-- **Backend health:** `https://<your-railway-app>.up.railway.app/health`
-- **Web (Vercel):** `https://<your-vercel-app>.vercel.app`
+> **Note**: Deployment infrastructure is ready (Docker, Railway config, Vercel-ready) but not currently deployed to live URLs. Use the local quick start below to run the app.
 
-> If the Railway free tier sleeps, fall back to `docker compose up` (instructions below). The whole thing runs locally in ~30 seconds.
+For deployment instructions, see the [Deployment](#deployment) section below.
 
 ---
 

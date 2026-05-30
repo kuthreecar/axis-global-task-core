@@ -4,18 +4,39 @@ import { useUser } from "../userStore";
 import { PriceCell, ChangeCell } from "../components/PriceCell";
 import { ConnectionBadge } from "../components/ConnectionBadge";
 import { useAllSymbols } from "../hooks";
+import { market } from "../market";
 import { C } from "../theme";
+
+type Sort = "sym" | "last" | "chg" | "vol";
 
 export function WatchlistScreen({ navigation }: any) {
   const { watchlist, addWatch, removeWatch } = useUser();
   const all = useAllSymbols();
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<Sort>("vol");
 
   const suggestions = useMemo(() => {
     if (!q) return [];
     const ql = q.toLowerCase();
     return all.filter((s) => s.toLowerCase().includes(ql) && !watchlist.includes(s)).slice(0, 6);
   }, [q, all, watchlist]);
+
+  const sorted = useMemo(() => {
+    const list = [...watchlist];
+    list.sort((a, b) => {
+      const ra = market.getRow(a), rb = market.getRow(b);
+      if (sort === "sym") return a.localeCompare(b);
+      if (sort === "last") return (rb?.p ?? 0) - (ra?.p ?? 0);
+      if (sort === "chg") {
+        const ca = ra && ra.o ? (ra.p - ra.o) / ra.o : 0;
+        const cb = rb && rb.o ? (rb.p - rb.o) / rb.o : 0;
+        return cb - ca;
+      }
+      if (sort === "vol") return (rb?.v ?? 0) - (ra?.v ?? 0);
+      return 0;
+    });
+    return list;
+  }, [watchlist, sort]);
 
   const renderItem = useCallback(({ item }: { item: string }) => (
     <Pressable
@@ -57,8 +78,15 @@ export function WatchlistScreen({ navigation }: any) {
           </View>
         )}
       </View>
+      <View style={{ flexDirection: "row", gap: 6, marginBottom: 8 }}>
+        {(["vol", "chg", "last", "sym"] as Sort[]).map((s) => (
+          <Pressable key={s} style={[styles.tab, sort === s && styles.tabActive]} onPress={() => setSort(s)}>
+            <Text style={{ color: sort === s ? C.text : C.muted, fontSize: 12 }}>{s.toUpperCase()}</Text>
+          </Pressable>
+        ))}
+      </View>
       <FlatList
-        data={watchlist}
+        data={sorted}
         keyExtractor={(s) => s}
         renderItem={renderItem}
         windowSize={10}
@@ -79,6 +107,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: C.panel2, color: C.text, borderColor: C.line, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 },
   suggest: { position: "absolute", top: 44, left: 0, right: 0, backgroundColor: C.panel2, borderColor: C.line, borderWidth: 1, borderRadius: 8, overflow: "hidden" },
   suggestItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
+  tab: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.panel2 },
+  tabActive: { backgroundColor: C.panel, borderColor: C.accent },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
   sym: { color: C.accent, fontSize: 16, fontWeight: "600" },
   right: { alignItems: "flex-end" },

@@ -6,7 +6,7 @@ import { market } from "../market";
 import { useUser } from "../userStore";
 import { C } from "../theme";
 
-type Sort = "vol" | "chg" | "sym";
+type Sort = "sym" | "last" | "chg" | "vol";
 
 export function MarketsScreen({ navigation }: any) {
   const all = useAllSymbols();
@@ -20,6 +20,7 @@ export function MarketsScreen({ navigation }: any) {
     r = r.sort((a, b) => {
       const ra = market.getRow(a), rb = market.getRow(b);
       if (sort === "sym") return a.localeCompare(b);
+      if (sort === "last") return (rb?.p ?? 0) - (ra?.p ?? 0);
       if (sort === "vol") return (rb?.v ?? 0) - (ra?.v ?? 0);
       const ca = ra && ra.o ? (ra.p - ra.o) / ra.o : 0;
       const cb = rb && rb.o ? (rb.p - rb.o) / rb.o : 0;
@@ -61,7 +62,7 @@ export function MarketsScreen({ navigation }: any) {
           autoCapitalize="characters"
           autoCorrect={false}
         />
-        {(["vol", "chg", "sym"] as Sort[]).map((s) => (
+        {(["vol", "chg", "last", "sym"] as Sort[]).map((s) => (
           <Pressable key={s} style={[styles.tab, sort === s && styles.tabActive]} onPress={() => setSort(s)}>
             <Text style={{ color: sort === s ? C.text : C.muted, fontSize: 12 }}>{s.toUpperCase()}</Text>
           </Pressable>

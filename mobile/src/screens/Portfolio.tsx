@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useUser } from "../userStore";
 import { PriceCell, fmtPx } from "../components/PriceCell";
 import { ConnectionBadge } from "../components/ConnectionBadge";
 import { market } from "../market";
 import { C } from "../theme";
+
+type Sort = "sym" | "last" | "chg" | "vol";
 
 // Per-row P&L cell — subscribes to one symbol, plain state update is fine
 // because only this cell re-renders per tick.
@@ -72,6 +74,24 @@ export function PortfolioScreen({ navigation }: any) {
   const [s, setS] = useState("BTC");
   const [q, setQ] = useState("0.1");
   const [px, setPx] = useState("");
+  const [sort, setSort] = useState<Sort>("vol");
+
+  const sorted = useMemo(() => {
+    const list = [...positions];
+    list.sort((a, b) => {
+      const ra = market.getRow(a.s), rb = market.getRow(b.s);
+      if (sort === "sym") return a.s.localeCompare(b.s);
+      if (sort === "last") return (rb?.p ?? 0) - (ra?.p ?? 0);
+      if (sort === "chg") {
+        const ca = ra && ra.o ? (ra.p - ra.o) / ra.o : 0;
+        const cb = rb && rb.o ? (rb.p - rb.o) / rb.o : 0;
+        return cb - ca;
+      }
+      if (sort === "vol") return (rb?.v ?? 0) - (ra?.v ?? 0);
+      return 0;
+    });
+    return list;
+  }, [positions, sort]);
 
   return (
     <View style={styles.container}>
@@ -95,6 +115,14 @@ export function PortfolioScreen({ navigation }: any) {
         </Pressable>
       </View>
 
+      <View style={{ flexDirection: "row", gap: 6, marginBottom: 8 }}>
+        {(["vol", "chg", "last", "sym"] as Sort[]).map((s) => (
+          <Pressable key={s} style={[styles.tab, sort === s && styles.tabActive]} onPress={() => setSort(s)}>
+            <Text style={{ color: sort === s ? C.text : C.muted, fontSize: 12 }}>{s.toUpperCase()}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {showAdd && (
         <View style={styles.addRow}>
           <TextInput style={[styles.input, { flex: 1 }]} value={s} onChangeText={(t) => setS(t.toUpperCase())} autoCapitalize="characters" placeholder="SYM" placeholderTextColor={C.muted} />
@@ -115,10 +143,10 @@ export function PortfolioScreen({ navigation }: any) {
         </View>
       )}
 
-      <PortfolioTotals positions={positions} />
+      <PortfolioTotals positions={sorted} />
 
       <FlatList
-        data={positions}
+        data={sorted}
         keyExtractor={(p) => p.s}
         renderItem={({ item }) => (
           <Pressable
@@ -149,6 +177,8 @@ const styles = StyleSheet.create({
   totalBox: { flex: 1, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 10, padding: 14 },
   totalLbl: { color: C.muted, fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 },
   totalVal: { color: C.text, fontSize: 22, fontWeight: "700", fontVariant: ["tabular-nums"] },
+  tab: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.panel2 },
+  tabActive: { backgroundColor: C.panel, borderColor: C.accent },
   row: { flexDirection: "row", paddingVertical: 12, borderBottomColor: C.line, borderBottomWidth: 0.5 },
   sym: { color: C.accent, fontSize: 16, fontWeight: "600" },
   subtle: { color: C.muted, fontSize: 12, marginTop: 2 },
