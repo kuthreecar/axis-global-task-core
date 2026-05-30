@@ -44,13 +44,12 @@ npm start            # press 'i' (iOS sim), 'a' (Android sim), 'w' (web)
 
 Open `http://localhost:5173`. Watchlist loads instantly; prices start flashing as soon as Hyperliquid sends mids. ~580 symbols, batches at 80ms.
 
-### Docker fallback
+### Docker (all-in-one)
 
 ```bash
 docker compose up --build
-# Then point the web app at it:
-echo "VITE_WS_URL=ws://localhost:8080/ws" > web/.env.local
-cd web && npm install && npm run dev
+# Web: http://localhost:80
+# Backend WS: ws://localhost:8080/ws
 ```
 
 ---
