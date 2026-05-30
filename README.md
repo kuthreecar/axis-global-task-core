@@ -1,4 +1,4 @@
-# Axis — Hyperliquid Live Portfolio & Watchlist
+# Axis Global Task — Hyperliquid Live Portfolio & Watchlist
 
 A React + Node web app that streams **tick-by-tick** prices for **~580 Hyperliquid markets** (perps + spot) over WebSockets, with a configurable watchlist, mock portfolio with live P&L, per-asset detail view with a live L2 order book, and reconnect-with-backfill that survives backgrounding the tab.
 
@@ -118,7 +118,7 @@ npx expo export --platform web --output-dir dist
 Hyperliquid WS (allMids, l2Book)        Hyperliquid REST (metaAndAssetCtxs, 5s poll)
        │                                            │
        ▼                                            ▼
- ┌────────────────────── axis-server (Node + ws) ───────────────────────┐
+ ┌────────────────────── server (Node + ws) ───────────────────────┐
  │  MarketState                                                         │
  │   • rows: Map<symbol, AssetRow>           (current state)            │
  │   • pending: Map<symbol, AssetDiff>       (coalesced since last tx)  │
