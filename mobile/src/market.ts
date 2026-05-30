@@ -122,12 +122,21 @@ function resolveWsUrl(): string {
   // 2) extra.wsUrl in app.json
   const extra = (Constants.expoConfig?.extra ?? (Constants as any).manifest?.extra) as { wsUrl?: string } | undefined;
   if (extra?.wsUrl) {
+    let url = extra.wsUrl;
     // For Android emulator, localhost on the host is 10.0.2.2 from inside the emulator.
-    if (Platform.OS === "android" && extra.wsUrl.includes("localhost")) {
-      return extra.wsUrl.replace("localhost", "10.0.2.2");
+    if (Platform.OS === "android" && url.includes("localhost")) {
+      url = url.replace("localhost", "10.0.2.2");
     }
-    return extra.wsUrl;
+    // For iOS simulator, localhost works fine
+    // For physical iOS devices, localhost won't work - user must set actual network IP
+    if (Platform.OS === "ios" && !Constants.isDevice && url.includes("localhost")) {
+      // iOS simulator - localhost works
+      return url;
+    }
+    // Physical device - use the URL as-is (should be network IP)
+    return url;
   }
+  // Fallback - this will only work in simulator/emulator
   return "ws://localhost:8080/ws";
 }
 
@@ -189,10 +198,12 @@ class Conn {
 
   private connect() {
     this.setState(market.getSeq() > 0 ? "reconnecting" : "connecting");
+    console.log(`[Conn] Connecting to ${this.url}`);
     try {
       const ws = new WebSocket(this.url);
       this.ws = ws;
       ws.onopen = () => {
+        console.log(`[Conn] WebSocket opened`);
         this.retryDelay = 500;
         this.lastMsgAt = Date.now();
         this.setState("connected");
@@ -207,15 +218,20 @@ class Conn {
         this.lastMsgAt = Date.now();
         if (this.state !== "connected") this.setState("connected");
         let msg: ServerMsg;
-        try { msg = JSON.parse(ev.data as string); } catch { return; }
+        try { msg = JSON.parse(ev.data as string); } catch { console.error(`[Conn] Failed to parse message: ${ev.data}`); return; }
         this.handle(msg);
       };
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log(`[Conn] WebSocket closed: code=${event.code} reason=${event.reason}`);
         if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
         this.scheduleReconnect();
       };
-      ws.onerror = () => { /* let onclose handle */ };
-    } catch {
+      ws.onerror = (error) => {
+        console.error(`[Conn] WebSocket error:`, error);
+        /* let onclose handle */
+      };
+    } catch (error) {
+      console.error(`[Conn] Failed to create WebSocket:`, error);
       this.scheduleReconnect();
     }
   }
